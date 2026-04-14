@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #00c6ff, #0072ff);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+        .weather-info {
+            margin-bottom: 20px;
+        }
+        .forecast {
+            display: flex;
+            justify-content: space-between;
+        }
+        .forecast-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            flex: 1;
+        }
+        @media(max-width: 600px) {
+            .forecast {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Dashboard</h1>
+        <input type="text" id="city-input" placeholder="Enter city" />
+        <button id="search-btn">Search</button>
+        <div class="weather-info" id="weather-info"></div>
+        <div class="forecast" id="forecast"></div>
+    </div>
+    
+    <script>
+        const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your API key
+
+        document.getElementById('search-btn').addEventListener('click', fetchWeather);
+
+        function fetchWeather() {
+            const city = document.getElementById('city-input').value;
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('City not found');
+                    return response.json();
+                })
+                .then(data => {
+                    displayWeather(data);
+                    fetchForecast(data.coord.lat, data.coord.lon);
+                })
+                .catch(err => {
+                    document.getElementById('weather-info').innerText = err.message;
+                });
+        }
+
+        function displayWeather(data) {
+            const { name, main, wind, weather } = data;
+            const weatherHTML = `
+                <h2>${name}</h2>
+                <img src="http://openweathermap.org/img/wn/${weather[0].icon}.png" alt="${weather[0].description}">
+                <p>Temperature: ${main.temp} °C</p>
+                <p>Humidity: ${main.humidity} %</p>
+                <p>Wind Speed: ${wind.speed} m/s</p>
+                <p>Pressure: ${main.pressure} hPa</p>
+                <p>Visibility: ${data.visibility / 1000} km</p>
+            `;
+            document.getElementById('weather-info').innerHTML = weatherHTML;
+        }
+
+        function fetchForecast(lat, lon) {
+            const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayForecast(data);
+                });
+        }
+
+        function displayForecast(data) {
+            const forecastHTML = data.list.slice(0, 5).map(item => {
+                return `
+                    <div class="forecast-item">
+                        <p>${new Date(item.dt * 1000).toDateString()}</p>
+                        <img src="http://openweathermap.org/img/wn/${item.weather[0].icon}.png" alt="${item.weather[0].description}">
+                        <p>Temp: ${item.main.temp} °C</p>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('forecast').innerHTML = forecastHTML;
+        }
+    </script>
+</body>
+</html>
